@@ -20,12 +20,13 @@ pipeline {
                     def dcExists = sh(script: 'oc get dc/myapp-deployment || true', returnStatus: true) == 0
                     
                     if (!dcExists) {
+                        echo "DeploymentConfig does not exist. Creating new deployment..."
                         sh '''
-                            echo "Creating new deployment..."
                             oc new-app myapp:latest --name=myapp-deployment
                             oc expose svc/myapp-deployment
                         '''
                     } else {
+                        echo "DeploymentConfig exists. Rolling out latest version..."
                         sh 'oc rollout latest dc/myapp-deployment'
                     }
                 }
