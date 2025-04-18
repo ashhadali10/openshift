@@ -1,19 +1,30 @@
 pipeline {
     agent any
+
+    // Configure triggers (optional, for automated builds)
+    triggers {
+        pollSCM('* * * * *') // Polls SCM every minute for changes (optional)
+    }
+
     stages {
         stage('Build') {
             steps {
-                sh 'echo "Building app..."'
+                echo 'Building app...'
                 sh 'oc start-build myapp'
             }
         }
+
         stage('Test') {
             steps {
-                sh 'echo "Running tests..."'
+                echo 'Running tests...'
                 sh 'curl -s http://myapp-deployment:8080 | grep "Hello"'
             }
         }
+
         stage('Deploy') {
+            when {
+                expression { return currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+            }
             steps {
                 script {
                     // Check if deployment exists
@@ -31,6 +42,15 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs for details.'
         }
     }
 }
