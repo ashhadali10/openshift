@@ -15,8 +15,20 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                sh 'echo "Deploying..."'
-                sh 'oc rollout latest dc/myapp-deployment'
+                script {
+                    // Check if deployment exists
+                    def dcExists = sh(script: 'oc get dc/myapp-deployment || true', returnStatus: true) == 0
+                    
+                    if (!dcExists) {
+                        sh '''
+                            echo "Creating new deployment..."
+                            oc new-app myapp:latest --name=myapp-deployment
+                            oc expose svc/myapp-deployment
+                        '''
+                    } else {
+                        sh 'oc rollout latest dc/myapp-deployment'
+                    }
+                }
             }
         }
     }
